@@ -15,7 +15,7 @@ Resolve this skill's directory from the loaded `SKILL.md`, then invoke. In a Cla
 python3 <skill-directory>/scripts/zellij_sessions.py <command> ...
 ```
 
-Do not substitute raw `zellij` keystrokes or broad `zjctl` selectors for supported operations. The wrapper provides exact session scoping, bounded capture, per-session locking, terminal-pane validation, and JSON output.
+Do not bypass the wrapper with ad hoc `zellij` keystrokes or broad `zjctl` selectors. The wrapper provides exact session scoping, bounded capture, per-session locking, terminal-pane validation, guarded submission, and JSON output. Internally, it uses a session- and pane-scoped Zellij `Enter` key event because a newline byte can insert a new line instead of submitting in full-screen terminal applications such as Codex CLI.
 
 Start with a read-only preflight for the named session:
 
@@ -79,7 +79,19 @@ python3 <skill-directory>/scripts/zellij_sessions.py send \
   --submit
 ```
 
-Omit `--submit` when the user asks to draft or type without pressing Enter. The wrapper refuses non-terminal panes, non-explicit IDs, missing panes, and title/tab identity changes. It never broadcasts. After submission, capture the pane again when useful to confirm that the message appeared or the agent acknowledged it; do not claim acceptance based only on a successful write.
+Omit `--submit` when the user asks to draft or type without pressing Enter. The wrapper always types through `zjctl` with Enter disabled. With `--submit`, it revalidates the exact pane identity, sends a separate Zellij `Enter` key event, and then attempts a bounded capture of the same pane. The capture is returned under `after_submit`.
+
+Use `submit-only` only when the user explicitly authorizes submitting text that is already composed in the verified pane:
+
+```text
+python3 <skill-directory>/scripts/zellij_sessions.py submit-only \
+  --session elephc \
+  --pane terminal:42 \
+  --expect-tab MySQLi \
+  --expect-title 'Agent'
+```
+
+The wrapper refuses non-terminal panes, non-explicit IDs, missing panes, and title/tab identity changes. It never broadcasts. In JSON output, `submitted: true` means only that the Zellij `Enter` event was sent; it does not confirm that the application received, accepted, or acted on the instruction. Inspect `after_submit` for the capture attempt and report any visible acknowledgment separately. If that capture fails after the event was sent, do not retry `send --submit` or `submit-only` automatically: a retry could submit twice.
 
 ## Install the dependency deterministically
 

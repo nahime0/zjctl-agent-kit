@@ -133,6 +133,177 @@ class CaptureAndSendTests(unittest.TestCase):
         self.assertEqual(args[-2:], ["--", "Fai X, Y e Z"])
         self.assertFalse(result["submitted"])
 
+    def test_send_submit_types_then_sends_enter_event_and_captures(self) -> None:
+        target = pane("terminal:42", tab="MySQLi", title="Agent")
+        completed = subprocess.CompletedProcess([], 0, stdout="", stderr="")
+        captured = {"output": "Working", "pane": target}
+        with (
+            mock.patch.object(
+                zellij_sessions, "list_panes", return_value=[target]
+            ) as inventory,
+            mock.patch.object(
+                zellij_sessions,
+                "_binary",
+                side_effect=lambda name, _override: f"/tmp/{name}",
+            ),
+            mock.patch.object(
+                zellij_sessions, "_run_checked", return_value=completed
+            ) as run,
+            mock.patch.object(
+                zellij_sessions, "_capture_locked", return_value=captured
+            ) as capture,
+            mock.patch.object(zellij_sessions.time, "sleep") as sleep,
+        ):
+            result = zellij_sessions.send_message(
+                "elephc",
+                "terminal:42",
+                "Fai X, Y e Z",
+                submit=True,
+                expect_title="Agent",
+                expect_tab="MySQLi",
+            )
+
+        self.assertEqual(inventory.call_count, 2)
+        self.assertEqual(
+            run.call_args_list[0].args[0],
+            [
+                "/tmp/zjctl",
+                "pane",
+                "send",
+                "--pane",
+                "id:terminal:42",
+                "--enter=false",
+                "--",
+                "Fai X, Y e Z",
+            ],
+        )
+        self.assertEqual(
+            run.call_args_list[1].args[0],
+            [
+                "/tmp/zellij",
+                "--session",
+                "elephc",
+                "action",
+                "send-keys",
+                "--pane-id",
+                "terminal_42",
+                "Enter",
+            ],
+        )
+        sleep.assert_called_once_with(zellij_sessions.POST_SUBMIT_CAPTURE_DELAY_SECONDS)
+        capture.assert_called_once_with(
+            "elephc",
+            "terminal:42",
+            zellij_sessions.DEFAULT_LINES,
+            False,
+            expect_title=None,
+            expect_tab="MySQLi",
+        )
+        self.assertTrue(result["submitted"])
+        self.assertIn("not confirmed", result["submitted_means"])
+        self.assertEqual(
+            result["after_submit"],
+            {"attempted": True, "succeeded": True, "capture": captured},
+        )
+
+    def test_send_submit_refuses_identity_change_after_typing(self) -> None:
+        target = pane("terminal:42", tab="MySQLi", title="Agent")
+        changed = pane("terminal:42", tab="MySQLi", title="Different")
+        completed = subprocess.CompletedProcess([], 0, stdout="", stderr="")
+        with (
+            mock.patch.object(
+                zellij_sessions,
+                "list_panes",
+                side_effect=[[target], [changed]],
+            ),
+            mock.patch.object(zellij_sessions, "_binary", return_value="/tmp/zjctl"),
+            mock.patch.object(
+                zellij_sessions, "_run_checked", return_value=completed
+            ) as run,
+            mock.patch.object(zellij_sessions, "_capture_locked") as capture,
+            self.assertRaises(zellij_sessions.SkillError) as raised,
+        ):
+            zellij_sessions.send_message(
+                "elephc",
+                "terminal:42",
+                "Fai X",
+                submit=True,
+                expect_title="Agent",
+                expect_tab="MySQLi",
+            )
+        self.assertEqual(raised.exception.code, "pane_identity_changed")
+        self.assertEqual(run.call_count, 1)
+        capture.assert_not_called()
+
+    def test_submit_only_sends_enter_and_mandatory_capture(self) -> None:
+        target = pane("terminal:42", tab="MySQLi", title="Agent")
+        completed = subprocess.CompletedProcess([], 0, stdout="", stderr="")
+        captured = {"output": "Working", "pane": target}
+        with (
+            mock.patch.object(zellij_sessions, "list_panes", return_value=[target]),
+            mock.patch.object(zellij_sessions, "_binary", return_value="/tmp/zellij"),
+            mock.patch.object(
+                zellij_sessions, "_run_checked", return_value=completed
+            ) as run,
+            mock.patch.object(
+                zellij_sessions, "_capture_locked", return_value=captured
+            ) as capture,
+            mock.patch.object(zellij_sessions.time, "sleep"),
+        ):
+            result = zellij_sessions.submit_only(
+                "elephc",
+                "terminal:42",
+                expect_title="Agent",
+                expect_tab="MySQLi",
+            )
+
+        self.assertEqual(
+            run.call_args.args[0],
+            [
+                "/tmp/zellij",
+                "--session",
+                "elephc",
+                "action",
+                "send-keys",
+                "--pane-id",
+                "terminal_42",
+                "Enter",
+            ],
+        )
+        capture.assert_called_once()
+        self.assertTrue(result["submitted"])
+        self.assertEqual(result["bytes_sent"], 0)
+        self.assertTrue(result["after_submit"]["succeeded"])
+
+    def test_capture_failure_after_enter_does_not_hide_submitted_event(self) -> None:
+        target = pane("terminal:42", tab="MySQLi", title="Agent")
+        completed = subprocess.CompletedProcess([], 0, stdout="", stderr="")
+        capture_error = zellij_sessions.SkillError(
+            "capture_failed", "Post-submit capture failed"
+        )
+        with (
+            mock.patch.object(zellij_sessions, "list_panes", return_value=[target]),
+            mock.patch.object(zellij_sessions, "_binary", return_value="/tmp/zellij"),
+            mock.patch.object(
+                zellij_sessions, "_run_checked", return_value=completed
+            ) as run,
+            mock.patch.object(
+                zellij_sessions, "_capture_locked", side_effect=capture_error
+            ),
+            mock.patch.object(zellij_sessions.time, "sleep"),
+        ):
+            result = zellij_sessions.submit_only(
+                "elephc",
+                "terminal:42",
+                expect_title="Agent",
+                expect_tab="MySQLi",
+            )
+
+        self.assertEqual(run.call_count, 1)
+        self.assertTrue(result["submitted"])
+        self.assertFalse(result["after_submit"]["succeeded"])
+        self.assertEqual(result["after_submit"]["error"]["code"], "capture_failed")
+
     def test_send_refuses_changed_title(self) -> None:
         target = pane("terminal:42", tab="MySQLi", title="Different")
         with (

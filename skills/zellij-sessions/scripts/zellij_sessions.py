@@ -23,6 +23,10 @@ DEFAULT_LINES = 80
 MAX_LINES = 1_000
 MAX_CAPTURE_BYTES = 65_536
 COMMAND_TIMEOUT_SECONDS = 30
+POST_SUBMIT_CAPTURE_DELAY_SECONDS = 0.25
+SUBMITTED_MEANS = (
+    "A Zellij Enter key event was sent; receipt or acceptance is not confirmed."
+)
 PANE_ID_RE = re.compile(r"^terminal:[0-9]+$")
 COMPATIBILITY_PATH = Path(__file__).resolve().parent.parent / "compatibility.json"
 
@@ -316,6 +320,16 @@ def _require_terminal_pane(
     return pane
 
 
+def _zellij_pane_id(pane_id: str) -> str:
+    if not PANE_ID_RE.fullmatch(pane_id):
+        raise SkillError(
+            "unsafe_pane_selector",
+            "Pane must be an explicit terminal ID such as terminal:42",
+            pane=pane_id,
+        )
+    return pane_id.replace(":", "_", 1)
+
+
 @contextlib.contextmanager
 def _session_lock(session: str) -> Iterator[None]:
     digest = hashlib.sha256(session.encode("utf-8")).hexdigest()[:24]
@@ -471,18 +485,119 @@ def send_message(
             expect_tab=expect_tab,
         )
         zjctl = _binary("zjctl", "ZJCTL_BIN")
-        args = [zjctl, "pane", "send", "--pane", f"id:{pane_id}"]
-        if submit:
-            args.extend(["--delay-enter", "0.1"])
-        else:
-            args.append("--enter=false")
-        args.extend(["--", text])
+        args = [
+            zjctl,
+            "pane",
+            "send",
+            "--pane",
+            f"id:{pane_id}",
+            "--enter=false",
+            "--",
+            text,
+        ]
         _run_checked(args, session=session)
-    return {
+
+        after_submit = None
+        if submit:
+            pane = _send_enter_event_locked(
+                session,
+                pane_id,
+                expect_title=expect_title,
+                expect_tab=expect_tab,
+            )
+            after_submit = _capture_after_submit_locked(session, pane_id, pane)
+
+    result = {
         "session": session,
         "pane": pane,
         "submitted": submit,
         "bytes_sent": len(text.encode("utf-8")),
+    }
+    if submit:
+        result["submitted_means"] = SUBMITTED_MEANS
+        result["after_submit"] = after_submit
+    return result
+
+
+def _send_enter_event_locked(
+    session: str,
+    pane_id: str,
+    *,
+    expect_title: str | None,
+    expect_tab: str | None,
+) -> dict[str, Any]:
+    pane = _require_terminal_pane(
+        session,
+        pane_id,
+        expect_title=expect_title,
+        expect_tab=expect_tab,
+    )
+    zellij = _binary("zellij", "ZELLIJ_BIN")
+    _run_checked(
+        [
+            zellij,
+            "--session",
+            session,
+            "action",
+            "send-keys",
+            "--pane-id",
+            _zellij_pane_id(pane_id),
+            "Enter",
+        ],
+        session=session,
+    )
+    return pane
+
+
+def _capture_after_submit_locked(
+    session: str, pane_id: str, pane: dict[str, Any]
+) -> dict[str, Any]:
+    time.sleep(POST_SUBMIT_CAPTURE_DELAY_SECONDS)
+    tab_name = pane.get("tab_name")
+    try:
+        capture = _capture_locked(
+            session,
+            pane_id,
+            DEFAULT_LINES,
+            False,
+            expect_title=None,
+            expect_tab=tab_name if isinstance(tab_name, str) else None,
+        )
+    except SkillError as exc:
+        return {
+            "attempted": True,
+            "succeeded": False,
+            "error": {
+                "code": exc.code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        }
+    return {"attempted": True, "succeeded": True, "capture": capture}
+
+
+def submit_only(
+    session: str,
+    pane_id: str,
+    *,
+    expect_title: str | None,
+    expect_tab: str | None,
+) -> dict[str, Any]:
+    with _session_lock(session):
+        pane = _send_enter_event_locked(
+            session,
+            pane_id,
+            expect_title=expect_title,
+            expect_tab=expect_tab,
+        )
+        after_submit = _capture_after_submit_locked(session, pane_id, pane)
+    return {
+        "session": session,
+        "pane": pane,
+        "submitted": True,
+        "submitted_means": SUBMITTED_MEANS,
+        "bytes_sent": 0,
+        "after_submit": after_submit,
     }
 
 
@@ -604,6 +719,14 @@ def _parser() -> argparse.ArgumentParser:
     )
     send_parser.add_argument("--expect-title")
     send_parser.add_argument("--expect-tab")
+
+    submit_only_parser = subcommands.add_parser(
+        "submit-only", help="Send Enter to one revalidated terminal pane"
+    )
+    submit_only_parser.add_argument("--session", required=True)
+    submit_only_parser.add_argument("--pane", required=True)
+    submit_only_parser.add_argument("--expect-title")
+    submit_only_parser.add_argument("--expect-tab")
     return parser
 
 
@@ -643,6 +766,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.pane,
                 args.text,
                 submit=args.submit,
+                expect_title=args.expect_title,
+                expect_tab=args.expect_tab,
+            )
+        elif args.command == "submit-only":
+            payload = submit_only(
+                args.session,
+                args.pane,
                 expect_title=args.expect_title,
                 expect_tab=args.expect_tab,
             )

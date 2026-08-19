@@ -32,6 +32,9 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(plugin["category"], "Productivity")
 
     def test_claude_manifest_and_marketplace_share_plugin_name(self) -> None:
+        codex_manifest = json.loads(
+            (ROOT / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
+        )
         manifest = json.loads(
             (ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8")
         )
@@ -41,6 +44,8 @@ class PackagingTests(unittest.TestCase):
         self.assertEqual(manifest["name"], "zjctl-agent-skill")
         self.assertEqual(marketplace["plugins"][0]["name"], manifest["name"])
         self.assertEqual(marketplace["plugins"][0]["source"], "./")
+        self.assertEqual(codex_manifest["version"], manifest["version"])
+        self.assertEqual(manifest["version"], "0.1.1")
 
     def test_repo_local_codex_link_resolves_to_canonical_skill(self) -> None:
         link = ROOT / ".agents" / "skills" / "zellij-sessions"

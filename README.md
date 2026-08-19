@@ -46,8 +46,11 @@ Example requests:
 - “Send this agent the following message: implement X, Y, and Z.”
 
 The wrapper never broadcasts input. It requires an exact session and terminal
-pane ID, checks the expected tab and title again before writing, and presses
-Enter only when the user explicitly authorizes submission.
+pane ID and checks the expected tab and title again before writing. For an
+authorized submission, it types with Enter disabled, revalidates the target,
+sends a separate Zellij `Enter` key event, and captures the pane afterward.
+`submitted: true` means the key event was sent, not that the terminal
+application accepted or acted on the instruction.
 
 ## Requirements
 

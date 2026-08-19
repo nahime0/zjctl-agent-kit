@@ -1,6 +1,6 @@
 {
   "name": "zjctl-agent-skill",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Inspect local Zellij sessions and safely message terminal-based agents.",
   "author": {
     "name": "zjctl-agent-skill contributors"

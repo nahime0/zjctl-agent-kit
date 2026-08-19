@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-19
+
 ### Added
 
 - Cross-client `zellij-sessions` skill for Codex and Claude Code.
@@ -23,3 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Restyled the README header with an original mark, uniform project badges,
   and the project website link.
+
+### Fixed
+
+- Submit messages with a real, session- and pane-scoped Zellij `Enter` key
+  event instead of a newline byte, after typing with Enter disabled and
+  revalidating the target pane.
+- Added guarded `submit-only` support and a mandatory bounded capture attempt
+  after each submit event. A successful event dispatch is reported separately
+  from application receipt or acceptance.
