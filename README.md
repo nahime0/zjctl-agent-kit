@@ -1,12 +1,34 @@
-# zjctl Agent Skill
+<p align="center">
+  <img src="assets/logo-mark.png" alt="zjctl Agent Kit logo" width="130">
+</p>
 
-A standalone agent skill for inspecting local [Zellij](https://zellij.dev/)
-sessions and safely messaging terminal-based agents from Codex or Claude Code.
+<h1 align="center">zjctl Agent Kit</h1>
 
-This repository is not a fork of `zjctl` and does not vendor its Rust source.
-When the dependency is missing, the skill can propose a deterministic install
-of a pinned release from the original
-[`mrshu/zjctl`](https://github.com/mrshu/zjctl) project.
+<p align="center">
+  <em>See every Zellij session. Guide the right agent.</em>
+</p>
+
+<p align="center">
+  <a href="https://github.com/nahime0/zjctl-agent-kit/stargazers"><img src="https://img.shields.io/github/stars/nahime0/zjctl-agent-kit?style=flat-square&amp;logo=github&amp;logoColor=white&amp;label=stars&amp;color=7C3AED" alt="GitHub stars"></a>
+  <a href="https://github.com/nahime0/zjctl-agent-kit/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/nahime0/zjctl-agent-kit/ci.yml?branch=main&amp;style=flat-square&amp;logo=githubactions&amp;logoColor=white&amp;label=CI&amp;color=7C3AED" alt="CI status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/nahime0/zjctl-agent-kit?style=flat-square&amp;color=7C3AED" alt="License: MIT"></a>
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-7C3AED?style=flat-square&amp;logo=python&amp;logoColor=white" alt="Python 3.10 or newer"></a>
+</p>
+
+<p align="center">
+  <strong>Codex &middot; Claude Code &middot; Deterministic bootstrap &middot; Guarded pane writes</strong>
+</p>
+
+<p align="center">
+  A portable agent skill for inspecting exact <a href="https://zellij.dev/">Zellij</a> sessions,<br>
+  reading bounded pane output, observing activity, and sending user-approved instructions.
+</p>
+
+<p align="center">
+  <a href="https://opensource.nahi.me"><strong>opensource.nahi.me</strong></a>
+</p>
+
+---
 
 ## What it can do
 
@@ -60,17 +82,17 @@ inspection, messaging, and bootstrap workflow.
 
 ## Install in Codex
 
-After this repository is published, replace `OWNER` in the commands below:
+Add this repository as a marketplace, then install the plugin:
 
 ```bash
-codex plugin marketplace add OWNER/zjctl-agent-skill --ref main
+codex plugin marketplace add nahime0/zjctl-agent-kit --ref main
 codex plugin add zjctl-agent-skill@zjctl-agent-skill
 ```
 
 To install only the skill, ask Codex's `$skill-installer` to install:
 
 ```text
-https://github.com/OWNER/zjctl-agent-skill/tree/main/skills/zellij-sessions
+https://github.com/nahime0/zjctl-agent-kit/tree/main/skills/zellij-sessions
 ```
 
 When Codex runs directly in this checkout, it discovers the same canonical
@@ -78,10 +100,10 @@ skill through `.agents/skills/zellij-sessions`.
 
 ## Install in Claude Code
 
-After publishing the repository:
+Add the repository marketplace and install the plugin:
 
 ```bash
-claude plugin marketplace add OWNER/zjctl-agent-skill
+claude plugin marketplace add nahime0/zjctl-agent-kit
 claude plugin install zjctl-agent-skill@zjctl-agent-skill
 ```
 

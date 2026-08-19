@@ -18,3 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   persistent Zellij configuration.
 - Codex and Claude plugin manifests, local marketplace metadata, and Python
   tests.
+
+### Changed
+
+- Restyled the README header with an original mark, uniform project badges,
+  and the project website link.
