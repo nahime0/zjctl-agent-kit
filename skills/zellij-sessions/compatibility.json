@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "zellij_min_version": "0.44.0",
+  "zjctl_version": "0.1.4",
+  "release_base_url": "https://github.com/mrshu/zjctl/releases/download/v0.1.4",
+  "cli_artifacts": {
+    "darwin-arm64": {
+      "filename": "zjctl-aarch64-macos.tar.gz",
+      "sha256": "b754ae2b3b5b81c8c21deab2ca6451d2e2ae323cc7c8da0a6341f854da98ab93"
+    },
+    "darwin-x86_64": {
+      "filename": "zjctl-x86_64-macos.tar.gz",
+      "sha256": "a704da3cd16adf82ad57b3c5e3e8dd79467456b40a5c0f901edbd774f91b7de0"
+    },
+    "linux-x86_64": {
+      "filename": "zjctl-x86_64-linux.tar.gz",
+      "sha256": "31e48e982beb6d60894af327a8fb73a6e1e6778093c3f2f36fe3e26e20202fda"
+    }
+  },
+  "plugin": {
+    "filename": "zrpc.wasm",
+    "sha256": "e0fa87629781bdbd56270841feaad0a3c662aca2be22c9c39a3040ff57b0a3db"
+  }
+}

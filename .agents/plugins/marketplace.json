@@ -1,0 +1,20 @@
+{
+  "name": "zjctl-agent-skill",
+  "interface": {
+    "displayName": "zjctl Agent Skill"
+  },
+  "plugins": [
+    {
+      "name": "zjctl-agent-skill",
+      "source": {
+        "source": "local",
+        "path": "./"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

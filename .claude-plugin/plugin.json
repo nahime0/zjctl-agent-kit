@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "zjctl-agent-skill",
+  "version": "0.1.0",
+  "description": "Inspect local Zellij sessions and safely message terminal-based agents.",
+  "author": {
+    "name": "zjctl-agent-skill contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "zellij",
+    "terminal",
+    "agents",
+    "automation"
+  ]
+}

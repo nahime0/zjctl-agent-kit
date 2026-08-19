@@ -1,0 +1,32 @@
+{
+  "name": "zjctl-agent-skill",
+  "version": "0.1.0",
+  "description": "Inspect local Zellij sessions and safely message terminal-based agents.",
+  "author": {
+    "name": "zjctl-agent-skill contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "zellij",
+    "terminal",
+    "agents",
+    "automation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "zjctl Agent Skill",
+    "shortDescription": "Inspect and message Zellij agents.",
+    "longDescription": "List Zellij sessions and tabs, inspect bounded pane output, observe activity, and send approved messages to verified terminal agents.",
+    "developerName": "zjctl-agent-skill contributors",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "List the tabs in my elephc Zellij session.",
+      "Check the latest output for MySQLi in elephc.",
+      "Send my approved instructions to that agent."
+    ]
+  }
+}
